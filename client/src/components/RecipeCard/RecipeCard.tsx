@@ -17,7 +17,7 @@ interface Props extends IRecipeCard {
 const RecipeCard = ({ id, name, ingredients, category, onDelete, onModifySuccess, categories }: Props) => {
     const [showModal, setShowModal] = useState(false);
     const [newName, setNewName] = useState(name);
-    const [newCategory, setNewCategory] = useState(category);  // The selected category ID
+    const [newCategory, setNewCategory] = useState<string>(category); // Changed to string
     const [newIngredients, setNewIngredients] = useState(ingredients);
     const [categoryName, setCategoryName] = useState('');
 
@@ -26,26 +26,29 @@ const RecipeCard = ({ id, name, ingredients, category, onDelete, onModifySuccess
     };
 
     const handleSave = async () => {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/recipe/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                name: newName,
-                category: newCategory,
-                ingredients: newIngredients
-            })
-        });
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/recipe/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: newName,
+                    category: newCategory,
+                    ingredients: newIngredients
+                })
+            });
 
-        if (res.ok) {
-            const data = await res.json();
-            onModifySuccess?.({ id, name: newName, category: newCategory, ingredients: newIngredients });
-            setShowModal(false);
+            if (res.ok) {
+                const updatedRecipe = await res.json();
+                onModifySuccess?.(updatedRecipe);
+                setShowModal(false);
+            }
+        } catch (error) {
+            console.error("Error updating recipe:", error);
         }
     };
 
-    // Use the categories prop to get the category name instead of fetching it again.
     useEffect(() => {
-        const selectedCategory = categories.find(cat => cat.id === newCategory);
+        const selectedCategory = categories.find(cat => cat.id.toString() === newCategory);
         if (selectedCategory) {
             setCategoryName(selectedCategory.title);
         }
@@ -67,18 +70,30 @@ const RecipeCard = ({ id, name, ingredients, category, onDelete, onModifySuccess
                 </div>
             </div>
 
-            {/* Modal */}
             {showModal && (
                 <div className="modal-overlay">
                     <div className="modal">
                         <h3>Edit Recipe</h3>
-                        <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Name" />
-                        <select value={newCategory} onChange={(e) => setNewCategory(Number(e.target.value))}>
+                        <input
+                            value={newName}
+                            onChange={(e) => setNewName(e.target.value)}
+                            placeholder="Name"
+                        />
+                        <select
+                            value={newCategory}
+                            onChange={(e) => setNewCategory(e.target.value)}
+                        >
                             {categories.map((cat) => (
-                                <option key={cat.id} value={cat.id}>{cat.title}</option>
+                                <option key={cat.id} value={cat.id.toString()}>
+                                    {cat.title}
+                                </option>
                             ))}
                         </select>
-                        <textarea value={newIngredients} onChange={(e) => setNewIngredients(e.target.value)} placeholder="Ingredients" />
+                        <textarea
+                            value={newIngredients}
+                            onChange={(e) => setNewIngredients(e.target.value)}
+                            placeholder="Ingredients"
+                        />
                         <div className="modal-actions">
                             <button className="btn save" onClick={handleSave}>Save</button>
                             <button className="btn cancel" onClick={() => setShowModal(false)}>Cancel</button>
