@@ -8,7 +8,6 @@ interface Category {
     title: string;
 }
 
-
 interface Props extends IRecipeCard {
     onDelete?: () => void;
     onModifySuccess?: (updated: IRecipeCard) => void;
@@ -18,17 +17,16 @@ interface Props extends IRecipeCard {
 const RecipeCard = ({ id, name, ingredients, category, onDelete, onModifySuccess, categories }: Props) => {
     const [showModal, setShowModal] = useState(false);
     const [newName, setNewName] = useState(name);
-    const [newCategory, setNewCategory] = useState(category);
+    const [newCategory, setNewCategory] = useState(category);  // The selected category ID
     const [newIngredients, setNewIngredients] = useState(ingredients);
-
-    const [categoryName, SetCategoryName] = useState('')
+    const [categoryName, setCategoryName] = useState('');
 
     const handleModify = () => {
         setShowModal(true);
     };
 
     const handleSave = async () => {
-        const res = await fetch(`http://localhost:3000/recipe/${id}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/recipe/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -45,19 +43,13 @@ const RecipeCard = ({ id, name, ingredients, category, onDelete, onModifySuccess
         }
     };
 
-
+    // Use the categories prop to get the category name instead of fetching it again.
     useEffect(() => {
-        const fetchCategory = async () => {
-            const res = await fetch(`http://localhost:3000/category/${category}`);
-
-            if (res.ok) {
-                const data = await res.json();
-                SetCategoryName(data.title);
-            }
-        };
-
-        fetchCategory();
-    }, []);
+        const selectedCategory = categories.find(cat => cat.id === newCategory);
+        if (selectedCategory) {
+            setCategoryName(selectedCategory.title);
+        }
+    }, [newCategory, categories]);
 
     return (
         <>
@@ -70,9 +62,7 @@ const RecipeCard = ({ id, name, ingredients, category, onDelete, onModifySuccess
                     </div>
                 </div>
                 <div className="card-body">
-
                     <span className="category-tag">{categoryName}</span>
-
                     <p className="ingredients">{ingredients}</p>
                 </div>
             </div>
@@ -83,7 +73,7 @@ const RecipeCard = ({ id, name, ingredients, category, onDelete, onModifySuccess
                     <div className="modal">
                         <h3>Edit Recipe</h3>
                         <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Name" />
-                        <select value={newCategory} onChange={(e) => setNewCategory(e.target.value)}>
+                        <select value={newCategory} onChange={(e) => setNewCategory(Number(e.target.value))}>
                             {categories.map((cat) => (
                                 <option key={cat.id} value={cat.id}>{cat.title}</option>
                             ))}

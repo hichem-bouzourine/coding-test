@@ -1,18 +1,24 @@
 import { useState } from 'react';
 import './style.css';
 
-interface IRecipeForm {
-    categories: Category[];
-}
-
 interface Category {
     id: number;
     createdAt: string;
     title: string;
 }
 
-const RecipeForm = ({ categories }: IRecipeForm) => {
-    const url = "http://localhost:3000";
+interface IRecipeForm {
+    categories: Category[];
+    onAddRecipe: (newRecipe: {
+        id?: number;
+        name: string;
+        category: string;
+        ingredients: string
+    }) => void;
+}
+
+const RecipeForm = ({ categories, onAddRecipe }: IRecipeForm) => {
+    const url = import.meta.env.VITE_API_URL;
 
     const [formData, setFormData] = useState({
         name: '',
@@ -44,8 +50,12 @@ const RecipeForm = ({ categories }: IRecipeForm) => {
 
             if (res.ok) {
                 const data = await res.json();
-                console.log("Recipe added:", data);
-                // Optionally reset form or update state here
+                onAddRecipe(data);
+                setFormData({
+                    name: '',
+                    category: '',
+                    ingredients: ''
+                });
             } else {
                 console.error("Failed to add recipe");
             }
